@@ -45,8 +45,8 @@ public class Graph {
 
 
 	Graph graph;
-	static Mapper[] all_mappers=new Mapper[Framework.Mapper];
-	static Reducer[] all_reducers=new Reducer[(Framework.Reducer)+1];
+	public static Mapper[] all_mappers=new Mapper[Framework.Mapper];
+	public static Reducer[] all_reducers=new Reducer[(Framework.Reducer)+1];
 	public Map<Vertex, List<Vertex>> adjVertices;
 	List<Vertex> list;
 

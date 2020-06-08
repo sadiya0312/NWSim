@@ -16,7 +16,7 @@ public class Engine extends Mapper
 
 
 
-	static Jobs[] array_jobs=new Jobs[Framework.number_jobs];
+	public static Jobs[] array_jobs=new Jobs[Framework.number_jobs];
 
 	void addVertex(int key,int arrival_time,int mappers_req,int mappers_location,int reducers_req,ArrayList<Integer> reducer_loc,int link_capacity,float demand_capacity,int deadline,int job_id,int n_flows) {
 

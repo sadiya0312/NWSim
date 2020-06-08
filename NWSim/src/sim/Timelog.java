@@ -6,7 +6,7 @@ import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
 public class Timelog {
-
+	private static final Logger logger = Logger.getLogger(Timelog.class.getName());
 	long time;
 	String algo;
 	public Timelog(long time,String algo) {
@@ -15,13 +15,13 @@ public class Timelog {
 	}
 
 	public void Enterlogs(){
-		FileHandler handler;
+		FileHandler handler = null;
 		try {
 			handler = new FileHandler("Timelog.log", true);
 
 			SimpleFormatter formatter = new SimpleFormatter();  
 			handler.setFormatter(formatter);  
-			Logger logger = Logger.getLogger(Timelog.class.getName());
+			
 			logger.addHandler(handler);
 
 
@@ -38,16 +38,23 @@ public class Timelog {
 		} catch (SecurityException | IOException e) {
 
 			e.printStackTrace();
+		}finally {
+			if(handler != null){
+				try {
+					handler.close();
+				} catch (SecurityException e) {
+					e.printStackTrace();
+				}
+			}
 		}
 	}
 	public void Enterjoblogs(){
-		FileHandler handler;
+		FileHandler handler = null;
 		try {
 			handler = new FileHandler("Timelog.log", true);
 
 			SimpleFormatter formatter = new SimpleFormatter();  
 			handler.setFormatter(formatter);  
-			Logger logger = Logger.getLogger(Timelog.class.getName());
 			logger.addHandler(handler);
 
 
@@ -65,16 +72,23 @@ public class Timelog {
 		} catch (SecurityException | IOException e) {
 
 			e.printStackTrace();
+		}finally {
+			if(handler != null){
+				try {
+					handler.close();
+				} catch (SecurityException e) {
+					e.printStackTrace();
+				}
+			}
 		}
 	}
 	public void Enteraverage(){
-		FileHandler handler;
+		FileHandler handler=null;;
 		try {
 			handler = new FileHandler("Timelog.log", true);
 
 			SimpleFormatter formatter = new SimpleFormatter();  
 			handler.setFormatter(formatter);  
-			Logger logger = Logger.getLogger(Timelog.class.getName());
 			logger.addHandler(handler);
 
 
@@ -91,6 +105,14 @@ public class Timelog {
 		} catch (SecurityException | IOException e) {
 
 			e.printStackTrace();
+		}finally {
+			if(handler != null){
+				try {
+					handler.close();
+				} catch (SecurityException e) {
+					e.printStackTrace();
+				}
+			}
 		}
 	}
 

@@ -14,7 +14,7 @@ public class TimelogDTO implements Serializable {
 	private static final long serialVersionUID = 4686332645878345726L;
 	private String value;
 	private String algo;
-	private TimeLogType logtype = TimeLogType.WAITING_TIME;
+	private TimeLogType logtype;
 	
 	
 	
@@ -28,7 +28,6 @@ public class TimelogDTO implements Serializable {
 	public TimelogDTO() {
 		
 	}
-
 
 	public String getValue() {
 		return value;
@@ -53,8 +52,4 @@ public class TimelogDTO implements Serializable {
 		return "TimelogDTO [value=" + value + ", algo=" + algo + ", logtype=" + logtype + "]";
 	}
 	
-	
-	
-	
-
 }

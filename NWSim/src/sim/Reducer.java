@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;;
 
-class Reducer {
+public class Reducer {
 
 	//In this class properties of Reducer are defined
 	Reducer rd;

@@ -3,6 +3,13 @@ import java.util.*;
 
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 
+import sim.algorithms.Algorithm;
+import sim.algorithms.AlgorithmFactory;
+import sim.algorithms.AlgorithmFactory.AlgoType;
+import sim.algorithms.FIFO;
+import sim.algorithms.PFS;
+import sim.algorithms.SJF;
+
 import java.io.*;
 import java.security.Timestamp;
 
@@ -20,19 +27,20 @@ public class Framework {
 
 
 	public static int Mapper;
-	static int Length_max;
-	static int Reducer;
-	static int Width_max;
-	static int Skew_max;
-	static Timestamp Arrivaltime;
-	static int Queue_length;
-	static int Bandwidth;
-	static double seed;
-	static List<Integer> list=new ArrayList<Integer>();
-	static int id,size;
-	static int queuesinmapper;
-	static int number_jobs;
-	static int count=0;
+	public static int Length_max;
+	public static int Reducer;
+	public static int Width_max;
+	public static int Skew_max;
+	public static Timestamp Arrivaltime;
+	public static int Queue_length;
+	public static int Bandwidth;
+	public static double seed;
+	public static List<Integer> list=new ArrayList<Integer>();
+	public static int id;
+	public static int size;
+	public static int queuesinmapper;
+	public static int number_jobs;
+	public static int count=0;
 
 
 
@@ -110,16 +118,11 @@ public class Framework {
 		en.Create_Event(en);
 		en.Create_jobs(en, g);
 		en.send_mapper(en,g);
-		FIFO fifo=new FIFO();
-		fifo.FIFO_red();
-
-		en.send_mapper(en,g);
-		SJF sjf=new SJF();
-		sjf.SJF_red();
-
-		PFS pfs=new PFS();
-		pfs.PFS_red();
-
+		
+		AlgorithmFactory algorithmFactory = new AlgorithmFactory(en,g);
+		Algorithm algorithm = algorithmFactory.getAlgorithm(AlgoType.All);
+		algorithm.runAlgo();
+		
 		TimeLogReader csv=new TimeLogReader();
 		csv.exportLog();
 		System.exit(0);

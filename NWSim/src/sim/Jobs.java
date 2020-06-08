@@ -6,7 +6,7 @@ public class Jobs {
 
 	static int job_id;
 
-	ArrayList<Integer> array_task_id;
+	public ArrayList<Integer> array_task_id;
 	public Jobs(int job_id) {
 		array_task_id=new ArrayList<Integer>();
 		Jobs.job_id=job_id;
