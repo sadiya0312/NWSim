@@ -39,10 +39,10 @@ public class PFS implements Algorithm {
 		history_mapper=new ArrayList<>(Collections.nCopies((Framework.Mapper), 0));
 		weight=new LinkedHashMap<Integer,Integer>();
 		p_value=new ArrayList<>(Collections.nCopies((Framework.Mapper-1), 0));
-		s_coflow=new ArrayList<>(Collections.nCopies((Framework.Mapper-1), 0));
-		s_reducer=new ArrayList<>(Collections.nCopies((Framework.Mapper-1), 0));
-		check=new ArrayList<>(Collections.nCopies((Framework.Mapper-1), 0));
-		reducer_location=new ArrayList<Integer>();
+		s_coflow=new ArrayList<>(Collections.nCopies((Framework.Mapper-1), 0));    //smallest reducer location of smallest coflow    
+		s_reducer=new ArrayList<>(Collections.nCopies((Framework.Mapper-1), 0));     
+		check=new ArrayList<>(Collections.nCopies((Framework.Mapper-1), 0));         
+		reducer_location=new ArrayList<Integer>();                                  
 
 	}
 
@@ -80,19 +80,25 @@ public class PFS implements Algorithm {
 			System.out.println("P values "+p_value);
 
 			int index=(s_reducer.indexOf(smallest_coflow));
-
+			
+			//int indexp=(p_value.indexOf(send_reducer));
+			//if(index!=indexp){index=indexp;}
+			
+			
 			if(smallest_coflow==0){
 				System.out.println("Smallest coflow is "+0);
 
 				//s_coflow.add(index,(int) Math.pow(10000,1000));	
 				s_coflow.remove(index);
 				s_reducer.remove(index);
+				
 				s_coflow.add(index,(int) Math.pow(10000,1000));
 				s_reducer.add(index,(int) Math.pow(10000,1000));
+				
 				smallest_coflow=Collections.min(s_reducer);
 				index=(s_reducer.indexOf(smallest_coflow));
 			}
-
+            
 			int coflow=(s_coflow.get(index));
 
 			System.out.println("Check "+ check);
@@ -119,13 +125,13 @@ public class PFS implements Algorithm {
 			}
 
 			history_mapper.add(index, history_mapper.get(index)+1);
-
+			
 			//Sending coflow to reducer
 			//Pick the coflow from Lhm
 			//pick number of flows in it and reducer location
 			//send number of flows=cores to each reducer
 
-			System.out.println("\nSending "+coflow+ " coflow "+"of mapper "+index+ " with p value "+send_reducer);
+			System.out.println("\nSending "+coflow+ " coflow "+"of mapper "+index+ " with p value "+send_reducer+" and history: "/*+leastusedmapper*/);
 
 			removejobelement(coflow);
 

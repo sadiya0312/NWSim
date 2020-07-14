@@ -144,6 +144,7 @@ public class Graph {
 		for(int i=1;i<((Framework.Reducer)+1);i++)
 
 		{
+			
 			all_reducers[i]=new Reducer();
 
 			all_reducers[i].Reducerdetails();

@@ -1,6 +1,7 @@
 package sim;
 
 import java.sql.Time;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.PriorityQueue;
@@ -20,6 +21,7 @@ public class Mapper {
 	public Map<Integer,Float> Connection_map;	        //This stores Reducer id and available bandwidth for this mapper(linkedhashmap)
 	public Map<Integer,Integer>Jobs_queue;	            //This stores number of current jobs in each queue of this mapper(width) 
 	public Vector<PriorityQueue<Integer>>mapper_queue;
+	public ArrayList<Integer>length;                    //Stores the changing length 
 	public int Next_job;						        //This stores time left to schedule next job
 	public int size;             			            //This stores Total number of jobs with the mapper(size),size=the sum of all flows in bytes
 	public int width;							        //width=the number of parallel flows
@@ -40,6 +42,7 @@ public class Mapper {
 		Connection_map=new HashMap<Integer,Float>();
 		Jobs_queue=new HashMap<Integer,Integer>();	
 		mapper_queue=new Vector<>();
+		length=new ArrayList<Integer>();
 
 		for(int i=0;i<Framework.queuesinmapper;i++)
 		{
@@ -80,5 +83,14 @@ public class Mapper {
 	{
 
 	}
+
+	@Override
+	public String toString() {
+		return "Mapper [mp=" + mp + ", Connection_map=" + Connection_map + ", Jobs_queue=" + Jobs_queue
+				+ ", mapper_queue=" + mapper_queue + ", length=" + length + ", Next_job=" + Next_job + ", size=" + size
+				+ ", width=" + width + "]";
+	}
+	
+	
 
 }

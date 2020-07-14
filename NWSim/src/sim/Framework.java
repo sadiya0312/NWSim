@@ -119,8 +119,8 @@ public class Framework {
 		en.Create_jobs(en, g);
 		en.send_mapper(en,g);
 		
-		AlgorithmFactory algorithmFactory = new AlgorithmFactory(en,g);
-		Algorithm algorithm = algorithmFactory.getAlgorithm(AlgoType.All);
+		AlgorithmFactory algorithmFactory = AlgorithmFactory.getInstance(en, g);
+		Algorithm algorithm = algorithmFactory.getAlgorithm(AlgoType.EEA);
 		algorithm.runAlgo();
 		
 		TimeLogReader csv=new TimeLogReader();

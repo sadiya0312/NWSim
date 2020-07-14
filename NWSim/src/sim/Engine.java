@@ -1,8 +1,11 @@
 package sim;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 
 
@@ -13,8 +16,9 @@ public class Engine extends Mapper
 	Engine en;
 	int reduce;
 	public static LinkedHashMap<Integer, Event> Lhm;
-
-
+	public static LinkedHashMap<Integer,ArrayList<Integer>> flowsize;        //Stores event(coflow) ID and flowsize of each flow in it.
+	Set<Integer> set; 
+	int input;
 
 	public static Jobs[] array_jobs=new Jobs[Framework.number_jobs];
 
@@ -31,11 +35,14 @@ public class Engine extends Mapper
 		//create events and fill queue of events
 		//create mapper and reducer network
 
-		Lhm=new LinkedHashMap<Integer, Event>(Framework.id);	
+		Lhm=new LinkedHashMap<Integer, Event>(Framework.id);
+		flowsize=new LinkedHashMap<Integer,ArrayList<Integer>>();
+		set = new HashSet<Integer>(Framework.Reducer);
 		System.out.println("");   
 	}
 
 
+	
 	public void Create_Event(Engine en)
 
 	{    //Use Collectdata.Ratio and Collectdata.flow, Framework.id as number of events
@@ -45,6 +52,15 @@ public class Engine extends Mapper
 
 		Random r = new Random();
 		r.setSeed((long) Framework.seed);
+
+		set=Collectdata.Ratio_location.keySet();
+		int min=Collections.min(set);
+		int max= Collections.max(set);
+		Random rand = new Random();
+		ArrayList<Integer> arr=new ArrayList<>(Framework.Reducer);
+		for(int input=1;input<=Framework.Reducer;input++){
+			arr.add((int) ((Math.random() * ((max - min) + 1)) + max));
+		}
 
 		for (Entry<Integer, Float> val2 : Collectdata.Ratio.entrySet())
 
@@ -64,16 +80,22 @@ public class Engine extends Mapper
 					//(flow/Reducer.cores);
 					//Iterator<Entry<Integer, Float>> val3 = Collectdata.Ratio_location.entrySet().iterator();
 					//for(int add=1;add<=reduce;add++){
-					Collectdata.Ratio_location.forEach((k,v)->{
 
+					Collectdata.Ratio_location.forEach((k,v)->{
 						if(reduce!=0){
 							System.out.println("key "+k+" Value "+v);
-							//reducer_loc.add(val3.next().getKey());	
-							reducer_loc.add(k);
+							//reducer_loc.add(val3.next().getKey());
+							//pick location randomly in key range
+
+
+
+							int picklocation=arr.get(rand.nextInt(arr.size()));
+							reducer_loc.add(picklocation);
 							reduce--;
-						}
-						System.out.println("Reducer Locations: "+reducer_loc);
-					});
+
+
+							System.out.println("Reducer Locations: "+reducer_loc);
+						}});
 
 
 					//}
@@ -85,6 +107,7 @@ public class Engine extends Mapper
 					{    if(e<=Framework.id)
 					{
 						en.addVertex(e,e,e,e,(int)(Math.ceil((float)flow/(float)Reducer.cores)),reducer_loc,e,e,e,((int)(r.nextInt(((Framework.number_jobs - 0) + 1) + 0))/*(Framework.number_jobs)*/),flow);
+						Findflowsize(e,flow);
 						//System.out.println("Number of flows:"+flow+" and "+flowinput+" and event "+i);
 						e++;
 					}
@@ -121,6 +144,15 @@ public class Engine extends Mapper
 			array_jobs[job]=new Jobs(job);					//creating these jobs storing their correspondng task.
 			array_jobs[job].identifytask();	
 		}
+
+	}
+
+	public void Findflowsize(int e, int n_flow){
+		ArrayList<Integer> size= new ArrayList<Integer>(n_flow);
+		for(int input=1;input<=n_flow;input++){
+			size.add((int) ((Math.random() * ((30000 - 2) + 1)) + 2));
+		}
+		flowsize.put(e,size);
 
 	}
 
