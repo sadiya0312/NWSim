@@ -16,11 +16,10 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.StringJoiner;
-import java.util.stream.Collectors;
 
-import sim.dto.TimeLogCSV;
+import sim.csvs.TimeLogCSV;
+import sim.dto.JobLogDTO;
 import sim.dto.TimeLogType;
 import sim.dto.TimelogDTO;
 import sim.utils.Constants;
@@ -32,6 +31,7 @@ import sim.utils.Constants;
 public class TimeLogReader {
 	private List<TimelogDTO> waitingList;
 	private List<TimelogDTO> completionList;
+	private List<JobLogDTO> jobLogDTOS;
 
 	/**
 	 * 
@@ -43,7 +43,6 @@ public class TimeLogReader {
 	}
 
 	/**
-	 * @param args
 	 */
 	public void exportLog() {
 		readLogFile("Timelog.log");
@@ -92,12 +91,15 @@ public class TimeLogReader {
 	private void readLogFile(String fileName){
 		waitingList = new ArrayList<>();
 		completionList = new ArrayList<>();
+		jobLogDTOS = new ArrayList<>();
 		try( BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(new FileInputStream(fileName)))){
 			String strLine;
 			while((strLine = bufferedReader.readLine())!= null){
 				
 				if(strLine.contains(Constants.AVERAGE_WAITING_TIME)){
 					waitingList.add(new TimelogDTO(getValue(strLine), getAlgoType(strLine), TimeLogType.WAITING_TIME));
+				}else if(strLine.contains(Constants.JOB)){
+					jobLogDTOS.add(new JobLogDTO());
 				} else if(strLine.contains(Constants.COMPLETION_TIME)){
 					completionList.add(new TimelogDTO(getValue(strLine), getAlgoType(strLine), TimeLogType.COMPLETION_TIME));
 				}
@@ -119,7 +121,10 @@ public class TimeLogReader {
 			return Constants.Algo.SJF;
 		}else if(datalog.contains(Constants.Algo.PFS)){
 			return Constants.Algo.PFS;
-		} 
+		}
+		else if(datalog.contains(Constants.Algo.EAA)){
+			return Constants.Algo.EAA;
+		}
 		return null;
 	}
 	

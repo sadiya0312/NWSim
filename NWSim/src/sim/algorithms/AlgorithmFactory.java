@@ -48,8 +48,10 @@ public class AlgorithmFactory {
 		SJF,
 		PFS,
 		EEA,
-		All
-	}
+		All, 
+		EAA,
+        ECE;
+    }
 	
 	public Algorithm getAlgorithm(AlgoType type) throws FileNotFoundException, CsvException, IOException{
 		switch (type) {
@@ -62,8 +64,11 @@ public class AlgorithmFactory {
 		case PFS:
 			return new PFS();
 			
-		case EEA:
-			return new EEA();
+		case EAA:
+			return new EAA();
+
+			case ECE:
+				return new ECE();
 		
 		case All:
 		   return new All(en,g);

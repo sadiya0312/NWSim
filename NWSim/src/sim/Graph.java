@@ -146,7 +146,7 @@ public class Graph {
 		{
 			
 			all_reducers[i]=new Reducer();
-
+			all_reducers[i].cpu_pw=Framework.intlist.get(i);
 			all_reducers[i].Reducerdetails();
 		}
 

@@ -15,12 +15,14 @@ public class Reducer {
 	public Map<Integer,Integer>Connection_Reduce;		//This stores Mapper id and coflow id
 	public Float cpu_pw=(float) 0;                          //This stores time taken by this reducer to complete 1 megabyte of job
 	public static int cores;                               //This stores number of cores in a reducer
+	public static int Reducer_location;                    //Stores the location of reducer
 	public long free_mem;                           //This stores free memory of the reducer
 	public long max_mem;                            //This stores maximum memory of the reducer
 	public long use_mem;                            //This stores memory in use of the reducer
 	public long power;                              //Store power in Watts
-	public long performance;                        //Stores performancen in MIPS
+	public long performance;                        //Stores performance in MIPS
 	public static long process_time;
+
     public Map<Integer,ArrayList<Integer>>energyChange;       //Stores mapper id and energy change arraylist
     public Map<Integer,ArrayList<Integer>>energyLengthRatio;  //Stores mapper id and ratio
     

@@ -1,10 +1,14 @@
 package sim.algorithms;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 import sim.Engine;
@@ -14,14 +18,18 @@ import sim.Graph;
 import sim.Jobs;
 import sim.Reducer;
 import sim.Timelog;
+import sim.csvs.*;
+import sim.utils.Constants;
 
 public class PFS implements Algorithm {
 
 	Jobs[] Jobarray=Engine.array_jobs.clone();
+	int job,jobid;
 	@SuppressWarnings("unchecked")
 	LinkedHashMap<Integer,Event> coflowLhm= (LinkedHashMap<Integer, Event>) Engine.Lhm.clone();
 	sim.Mapper[] mappers = Graph.all_mappers.clone();
 	long time=System.nanoTime();
+	long coflowexecute;
 	long AvgPFS=0;
 	String algo;
 	ArrayList<Long> timejob=new ArrayList<Long>(Collections.nCopies((Framework.number_jobs),0L));
@@ -35,6 +43,14 @@ public class PFS implements Algorithm {
 	ArrayList<Integer> check;
 	LinkedHashMap<Integer,Integer>weight;
 	ArrayList<Integer> reducer_location;
+
+	ArrayList<Float> efficiency;
+
+	Map<Integer,Float> csvReducerMap;
+	Jobs[] jobarray=Engine.array_jobs.clone();
+
+	int key;
+
 	public PFS() {
 		history_mapper=new ArrayList<>(Collections.nCopies((Framework.Mapper), 0));
 		weight=new LinkedHashMap<Integer,Integer>();
@@ -43,6 +59,58 @@ public class PFS implements Algorithm {
 		s_reducer=new ArrayList<>(Collections.nCopies((Framework.Mapper-1), 0));     
 		check=new ArrayList<>(Collections.nCopies((Framework.Mapper-1), 0));         
 		reducer_location=new ArrayList<Integer>();                                  
+
+	}
+
+	public void AddEfficiency(){
+		try {
+			CsvHelper.initData(CsvHelper.CSVFile.CPU_SPECS);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		for(int reducer=0;reducer<((Framework.Reducer));reducer++)
+		{
+			//efficiency.add(Framework.intlist.get(reducer));
+			//csvReducerMap.put(reducer, Framework.intlist.get(reducer));
+		}
+	}
+
+	public void WriteEnergyCSV(float Avg_energyusage,Float maxcombination,int coflow_max,int flow_max, int trackingNumber)  {
+
+		/*
+		 * Write in the CSV file energy usage, average energy, coflow and flows used
+		 */
+
+		csvReducerMap.forEach((k, v) -> {
+			if(v==maxcombination){
+				key=k;
+				System.out.println(" Index is "+key);
+			}
+		});
+
+		List<EnergyLogCSV> energyLogs = new ArrayList<>();
+
+		//energyLogs.add(new EnergyLogCSV(Constants.Algo.PFS,String.valueOf(trackingNumber) ,String.valueOf(coflow_max),String.valueOf(flow_max),
+				//String.valueOf(Avg_energyusage),String.valueOf(maxcombination),String.valueOf(key)));
+
+
+		if (!energyLogs.isEmpty()) {
+			String fileName = Constants.File.getFileName(Constants.File.FILE_NAME_ENERGY);
+			File file = Constants.File.getFile(Constants.File.FILE_NAME_ENERGY);
+			boolean append = Constants.File.isFileExists(file);
+			StringJoiner csvData = new StringJoiner(",\n");
+			if(!append)
+				csvData.add(EnergyLogCSV.getHeaderCSVWithNoOfRuns());
+			Path path = Paths.get(fileName.replace("\\", "/"));
+			energyLogs.stream().map(el -> el.toCsvStringWithNoOfRuns()).forEach(csvData::add);
+			try {
+				Files.write(path, (csvData.toString()+System.lineSeparator()).getBytes(StandardCharsets.UTF_8), file.exists()? StandardOpenOption.APPEND : StandardOpenOption.CREATE_NEW);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}  //Append mode
+
+		}
 
 	}
 
@@ -58,10 +126,11 @@ public class PFS implements Algorithm {
 		// Find P for two mappers (1&2) 
 		// if P1>P2 then send P1 to reducer
 
+        AddEfficiency();
 
 		//Use Loop here 	
 		for(int run=0;run<=((Framework.Mapper)*(Framework.queuesinmapper)*(Framework.Queue_length));run++){
-
+			coflowexecute=System.nanoTime();
 			coflow_mapper();
 			if(run==0){
 				s_coflow.remove(s_coflow.size()-1);
@@ -141,16 +210,27 @@ public class PFS implements Algorithm {
 
 					int n_flows=val2.getValue().n_flows;
 
-
 					reducer_location=(ArrayList<Integer>) (val2.getValue().reducers_location.clone());
 
 					int Reducer_send=reducer_location.get(0);
 					reducer_location.remove(0);
-
+					List<FlowSizeCSV> flowsizeCSVS  = new ArrayList<>();
 					for(int assign=1;assign<=n_flows;)
 					{   int same=1;
 					while(same<=Reducer.cores && assign<=n_flows){
 						System.out.println("Send "+assign +" flow to reducer "+Reducer_send);
+
+
+
+						if(Engine.flowsize.get(coflow).size()>assign) {
+							int sizeofflow = Engine.flowsize.get(coflow).get(assign);
+							flowsizeCSVS.add(new FlowSizeCSV(algo, String.valueOf(sizeofflow), String.valueOf(Reducer_send)));
+							String fileName = Constants.File.getFileName(Constants.File.FILE_LINE_FLOWSIZE);
+							File file = Constants.File.getFile(Constants.File.FILE_LINE_FLOWSIZE);
+							CsvContract.writeToCSV(file, fileName, flowsizeCSVS, CsvContract.CsvHeaderType.FLOWSIZE_LOG);
+						}
+
+						//WriteEnergyCSV(float Avg_energyusage,Float maxcombination,coflow,assign, int trackingNumber);
 						//reducer_location.remove(0);
 						same++;
 						assign++;
@@ -166,6 +246,39 @@ public class PFS implements Algorithm {
 					}
 				}
 			}
+
+			List<ParameterLogCSV> parameterLogCSVS  = new ArrayList<>();
+
+			coflowexecute=((System.nanoTime()-coflowexecute)/1000000);
+
+
+			int coflowlength= Collections.max(Engine.flowsize.get(coflow));
+			int size=Engine.flowsize.get(coflow).size();
+
+			/*
+			 * Find job id
+			 */
+			for(job = 0;job<(Framework.number_jobs);job++)
+			{
+				if(jobarray[job].array_task_id!=null) {
+					jobarray[job].array_task_id.forEach((n) -> {
+
+						if (coflow == (n)) {
+							jobid = job;
+						}
+					});
+				}
+			}
+
+			String algo="PFS";
+			//Store Algo,coflow,length,size,job,job_runtime
+			parameterLogCSVS.add(new ParameterLogCSV(algo,String.valueOf(coflow),String.valueOf(coflowlength),String.valueOf(size),String.valueOf(jobid),String.valueOf(coflowexecute)));
+			String fileName = Constants.File.getFileName(Constants.File.FILE_NAME_PARAMETER);
+			File file = Constants.File.getFile(Constants.File.FILE_NAME_PARAMETER);
+			CsvContract.writeToCSV(file,fileName,parameterLogCSVS,CsvContract.CsvHeaderType.PARAMETER_LOG);
+
+
+			System.out.println("Coflow execution time:"+coflowexecute);
 
 
 			//Delete this coflow from the mapper queue

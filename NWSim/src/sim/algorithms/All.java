@@ -15,6 +15,7 @@ public class All implements Algorithm {
 	}
 	
 	public void runAlgo() throws InterruptedException, IOException {
+
 		FIFO fifo=new FIFO();
 		fifo.runAlgo();
 		en.send_mapper(en, g);
@@ -22,6 +23,12 @@ public class All implements Algorithm {
 		sjf.runAlgo();
 		PFS pfs=new PFS();
 		pfs.runAlgo();
+		EAA eaa=new EAA();
+		eaa.runAlgo();
+		ECE ece=new ECE();
+		ece.runAlgo();
+
+
 	}
 
 }

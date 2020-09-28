@@ -1,13 +1,12 @@
-package sim.dto;
+package sim.csvs;
 
-import java.io.Serializable;
+import sim.utils.Constants;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.StringJoiner;
 
-import sim.utils.Constants;
-
-public class TimeLogCSV implements Serializable{
+public class TimeLogCSV implements CsvContract{
 
 	private static final long serialVersionUID = 4554123994899336646L;
 	private static final DateTimeFormatter dateTimeFormat = DateTimeFormatter.ofPattern(Constants.DATE_FORMAT);

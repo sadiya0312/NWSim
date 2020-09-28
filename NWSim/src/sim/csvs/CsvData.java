@@ -1,13 +1,12 @@
 /**
  * 
  */
-package sim.dto;
+package sim.csvs;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Serializable;
@@ -15,10 +14,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
+import sim.Framework;
 import sim.algorithms.EEA;
 import sim.exceptions.CsvException;
+
 /**
  * @author Sadiya
  * 
@@ -39,23 +39,13 @@ public class CsvData implements Serializable {
 	private List<CsvRow> datas;
 	private CsvRow header;
 	
-	public static void extractCsv() throws FileNotFoundException, CsvException, IOException {
-	CsvData csvData=new Builder("C:\\Users\\Sadiya\\Desktop\\Coflow-data\\Data\\CPUmatrix.csv")
-			.createHeaderRow().buildData().create();
-	/*System.out.println(csvData.getHeader());*/
-	//csvData.datas.forEach(System.out::println);
-	
-    /*System.out.println(csvData.getIndexForColumn("Efficiency"));*/
-    System.out.println(csvData.getColumnValue("Efficiency"));
-    //Change the getColumnValue each time to get different collumn
-    EEA.intlist=csvData.getColumnValue("Efficiency").stream().map(Float::parseFloat).collect(Collectors.toList());
-     
-	}
+
 	
 	private CsvData(Builder builder)throws CsvException {
 		this.datas=builder.datas;
 		this.header=builder.header;
 		EEA.intlist=new ArrayList<Float>();
+		Framework.intlist=new ArrayList<Float>();
 	}
 
 	
@@ -69,7 +59,7 @@ public class CsvData implements Serializable {
 
 	public int getIndexForColumn(String columnName){
 		if(!header.cols.contains(columnName)){
-			throw new CsvException("ColumnName "+columnName+"not found");
+			throw new CsvException("ColumnName "+columnName+" not found");
 		}
 		return header.cols.indexOf(columnName);
 	}

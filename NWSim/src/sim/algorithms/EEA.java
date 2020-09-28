@@ -1,7 +1,6 @@
 package sim.algorithms;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -11,8 +10,10 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
@@ -22,13 +23,16 @@ import sim.Framework;
 import sim.Graph;
 import sim.Mapper;
 import sim.Reducer;
-import sim.dto.Combination;
-import sim.dto.CsvData;
-import sim.dto.EnergyLogCSV;
+import sim.csvs.CsvContract;
+import sim.csvs.CsvData;
+import sim.csvs.CsvHelper;
+import sim.csvs.EnergyLogCSV;
+import sim.dto.*;
 import sim.exceptions.CsvException;
 import sim.utils.Constants;
+import sim.utils.Utils;
 
-public class EEA implements Algorithm {
+public class EEA implements Algorithm , Constants.File{
 	/*
 	 * 1. Read Efficiecy in ArrayList. 2. Calculate threshhhold over this
 	 * ArrayList. 3. Eliminate the outliers from the arraylist. 4. Create nCr
@@ -49,7 +53,6 @@ public class EEA implements Algorithm {
 	EEA eea;
 	Combination combination = Combination.getInstance();
 	float energyusage, Avg_energyusage;
-
 	LinkedHashMap<Integer, ArrayList<Integer>> flowsize;
 	ArrayList<Float> workingset;
 	ArrayList<Float> inputreducer;
@@ -64,17 +67,20 @@ public class EEA implements Algorithm {
 	Mapper[] mappers;
 
 	Float maxcombination;
-	int coflow_max;
+	int coflow_max, temp;
 	int flow_max;
 	Float lt, ut;
 	int n, r;
 	int reducer;
+	Map<Float,Integer> csvReducerMap;
 
-	public EEA() throws FileNotFoundException, CsvException, IOException {
-		index = new ArrayList<Integer>();
+
+	public EEA() throws CsvException, IOException {
+		index = new ArrayList<>();
 		mappers = Graph.all_mappers.clone();
 		flowsize = Engine.flowsize;
-		CsvData.extractCsv();
+		csvReducerMap = new HashMap<>();
+		CsvHelper.initData(CsvHelper.CSVFile.CPU_SPECS);
 	}
 
 	@Override
@@ -124,6 +130,7 @@ public class EEA implements Algorithm {
 				n++;
 			}
 		});
+		
 		r = Framework.Reducer;
 
 		// Combination combination = Combination.getInstance();
@@ -136,6 +143,10 @@ public class EEA implements Algorithm {
 		System.out.println(combination.getColumnCombs().size());
 
 	}
+
+
+//***********************************************************************************************************/
+
 
 	@SuppressWarnings("unchecked")
 	public void taskAssignment() {
@@ -155,182 +166,349 @@ public class EEA implements Algorithm {
 
 		optimalThreshhold();
 		removeOutlier();
-		
+
 		calculateArrays();// Gives us current arrays
 
 		combination.getColumnCombs().forEach(columnComb -> {
+			
+			//ColumnComb colComb=new ColumnComb.Builder(r).setRows(1).setColumns(r).build();
+			
+		    
+			
 			//Here assign each element of columnComb to Reducer
 			//Pass each element of columnCombs to graph
+			
+			
 			inputreducer=(ArrayList<Float>) columnComb.getCombinations().clone();
 			for(reducer=0;reducer<((Framework.Reducer));reducer++)
 			{
-			 System.out.println(inputreducer.get(reducer));
-			 Graph.all_reducers[reducer+1].cpu_pw=inputreducer.get(reducer);	
+				System.out.println(inputreducer.get(reducer));
+				Graph.all_reducers[reducer+1].cpu_pw=inputreducer.get(reducer);	
 			}
+			
+			
+			
 			//Run untill all mappers are empty
+			
+			
 			while(mappers!=null){
-			calculateArrays();
-			while (Collections.frequency(mapper_max, 0) != mapper_max.size()) {
+				calculateArrays();
+				while (Collections.frequency(mapper_max, 0) != mapper_max.size()) {
 
-				// calculateArrays();
-				coflow_max = Collections.max(mapper_max);
-				workingset = (ArrayList<Float>) columnComb.getCombinations().clone();
+					// calculateArrays();
+					coflow_max = Collections.max(mapper_max);
+					workingset = (ArrayList<Float>) columnComb.getCombinations().clone();
 
-				System.out.println("This is working set " + workingset);
-				System.out.println(mapper_max);
-				System.out.println(coflow_max);
-				System.out.println("These are flow sizes " + flowsize.get(coflow_max));
-
-				while ((flowsize.get(coflow_max)) != null) {
-					if ((flowsize.get(coflow_max)).isEmpty()) {
-						break;
-					}
-
-					current_reducers = new ArrayList<Integer>();
-					// calculateArrays(); //Gives us current arrays
-
-					// coflow_max= Collections.max(mapper_max);
+					System.out.println("This is working set " + workingset);
+					System.out.println(mapper_max);
 					System.out.println(coflow_max);
-					System.out.println(flowsize.get(coflow_max));
+					System.out.println("These are flow sizes " + flowsize.get(coflow_max));
 
-					flow_max = Collections.max(flowsize.get(coflow_max));
-					System.out.println(flow_max);
-
-					// Match up with full combine array and send to
-					// reducer(reducer can receieve values untill size of core)
-					System.out.println("Max Working  Set " + workingset);
-					if (workingset.isEmpty()) {
-						// wait till process finish
-						try {
-							Thread.sleep(5);
-						} catch (InterruptedException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
+					while ((flowsize.get(coflow_max)) != null) {
+						
+						if ((flowsize.get(coflow_max)).isEmpty()) {
+							break;
 						}
-					} else {
-						maxcombination = (Float) Collections.max(workingset);
-					}
-					// Assign each maxcombination flows equivalent to number of
-					// cores
-					List<EnergyLogCSV> energyLogs = new ArrayList<>();
-					for (int assign = 0; assign <= Reducer.cores; assign++) {
-						if (flowsize.get(coflow_max).isEmpty()) {
+
+						current_reducers = new ArrayList<>();
+						// calculateArrays(); //Gives us current arrays
+
+						// coflow_max= Collections.max(mapper_max);
+						System.out.println(coflow_max);
+						System.out.println(flowsize.get(coflow_max));
+
+						flow_max = Collections.max(flowsize.get(coflow_max));
+						
+						System.out.println(flow_max);
+
+						// Match up with full combine array and send to
+						// reducer(reducer can receieve values untill size of core)
+						
+						System.out.println("Max Working  Set " + workingset);
+						
+						if (workingset.isEmpty()) {
+							// wait till process finish
+							try {
+								Thread.sleep(5);
+								//Define workingset
+								workingset = (ArrayList<Float>) columnComb.getCombinations().clone();
+								maxcombination = Collections.max(workingset);
+								
+							} catch (InterruptedException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
 						} else {
-							flow_max = Collections.max(flowsize.get(coflow_max));
-							System.out.println(flow_max);
-							System.out.println("Flowsizes " + flowsize.get(coflow_max));
-							// Calculate how much energy of maxcombination is
-							// used by the flowsize
-							energyusage = (maxcombination) * (flow_max);
-							Avg_energyusage = Avg_energyusage + energyusage;
-							System.out.println("Energy Useage by " + flow_max + " is " + energyusage);
-							flowsize.get(coflow_max).remove(flowsize.get(coflow_max).indexOf(flow_max));
-							System.out.println("Assign " + flow_max + " to " + maxcombination);
+							maxcombination = Collections.max(workingset);
+						}
+
+//**************************************************************************************************************/					
+
+
+						// Assign each maxcombination flows equivalent to number of
+						// cores
+
+						
+						
+						/*IntStream.range(0, Reducer.cores).forEach(assign -> {
+							
+							if (!(flowsize.get(coflow_max) == null || flowsize.get(coflow_max).isEmpty())) {
+								flow_max = Collections.max(flowsize.get(coflow_max));
+								System.out.println(flow_max);
+								System.out.println("Flowsizes " + flowsize.get(coflow_max));*/
+
+								// Calculate how much energy of maxcombination is
+								// used by the flowsize
+
+								/*energyusage = (maxcombination) * (flow_max);
+								Avg_energyusage = Avg_energyusage + energyusage;*/
+
+					//*********************Removing flowsize***************************************************/
+
+								/*flowsize.get(coflow_max).remove((Integer) flow_max);
+
+
+
+								System.out.println("Energy Useage by " + flow_max + " is " + energyusage);
+								System.out.println("Assign " + flow_max + " to " + maxcombination);
+
+							}
+							else{
+								//Find new coflow_max
+								flowsize.remove(coflow_max);
+								temp = coflow_max;
+								mapper_max.set(mapper_max.indexOf(temp),0);
+								coflow_max = Collections.max(mapper_max);
+								mapper_max.set(mapper_max.indexOf(0),temp);
+
+							}*/
+
+							//Find in which reducer maxcombination exist
+							/*for(reducer=0;reducer<((Framework.Reducer));reducer++)
+							{
+								System.out.println(inputreducer.get(reducer));
+								if(Graph.all_reducers[reducer+1].cpu_pw==maxcombination){
+									csvReducerMap.put(maxcombination,reducer);
+									System.out.println(maxcombination+" energy belongs to reducer "+reducer);
+
+								}
+							}
+						});*/
+
+						for (int assign = 0; assign < Reducer.cores; assign++) {
+				
+							if (flowsize.get(coflow_max).isEmpty()) {
+						
+							} 
+							else {
+								flow_max = Collections.max(flowsize.get(coflow_max));
+								System.out.println(flow_max);
+								System.out.println("Flowsizes " + flowsize.get(coflow_max));
+
+								// Calculate how much energy of maxcombination is
+								// used by the flowsize
+
+								energyusage = (maxcombination) * (flow_max);
+								Avg_energyusage = Avg_energyusage + energyusage;
+								
+					//*********************Removing flowsize***************************************************/
+								
+								flowsize.get(coflow_max).remove(flowsize.get(coflow_max).indexOf(flow_max));
+								
+								
+								
+								System.out.println("Energy Useage by " + flow_max + " is " + energyusage);
+								System.out.println("Assign " + flow_max + " to " + maxcombination);
+
+							}
+
+
+							//Find in which reducer maxcombination exist
+							for(reducer=0;reducer<((Framework.Reducer));reducer++)
+							{
+								System.out.println(inputreducer.get(reducer));
+								if(Graph.all_reducers[reducer+1].cpu_pw==maxcombination){
+									csvReducerMap.put(maxcombination,reducer);
+									System.out.println(maxcombination+" energy belongs to reducer "+reducer);
+
+								}
+							}	
+							
 							
 						}
-						//Find in which reducer maxcombination exist
-						for(reducer=0;reducer<((Framework.Reducer));reducer++)
-						{
-						 System.out.println(inputreducer.get(reducer));
-						 if(Graph.all_reducers[reducer+1].cpu_pw==maxcombination){
-							 System.out.println(maxcombination+" energy belongs to reducer "+reducer);
-							 
-						 }
-						}
-						// Enter values coflow_max and Avg_energyusage in a csv
-						// file
-						// Enter to csv two values
-						// AVGEnergyUasge
-						// COFLOWMax					
-					}
-					energyLogs.add(new EnergyLogCSV(String.valueOf(coflow_max), String.valueOf(Avg_energyusage),
-							Constants.Algo.EEA));
-					if (!energyLogs.isEmpty()) {
-						String fileName = Constants.File.getFileName(Constants.File.FILE_NAME_ENERGY);
-						File file = Constants.File.getFile(Constants.File.FILE_NAME_ENERGY);
-						boolean append = Constants.File.isFileExists(file);
-						StringJoiner csvData = new StringJoiner(",\n");
-						if(!append)
-							csvData.add(EnergyLogCSV.getHeaderCSV());
-						Path path = Paths.get(fileName.replace("\\", "/"));
-						energyLogs.stream().map(el -> el.toCsvString()).forEach(csvData::add);
+
+
+//****************************************************************************************************************/				
+						List<EnergyLogCSV> energyLogs = new ArrayList<>();
+						int trackingNumber = 1;
 						try {
-							Files.write(path, (csvData.toString()+System.lineSeparator()).getBytes(StandardCharsets.UTF_8), file.exists()?StandardOpenOption.APPEND : StandardOpenOption.CREATE_NEW);
+							CsvData energyLogCSVData = CsvHelper.initData(CsvHelper.CSVFile.ENERGY_LOGS);
+							 trackingNumber = Integer.parseInt(energyLogCSVData.getColumnValue(Constants.Output.NUMBER_OF_RUNS).stream()
+									.reduce((first, second)-> second).orElse("0"))+1;
+
 						} catch (IOException e) {
-							// TODO Auto-generated catch block
 							e.printStackTrace();
-						}  //Append mode
-						
+						}
+
+						//energyLogs.add(new EnergyLogCSV(Constants.Algo.EEA, String.valueOf(trackingNumber),String.valueOf(coflow_max), String.valueOf(flow_max),
+								//String.valueOf(Avg_energyusage),String.valueOf(maxcombination),String.valueOf(csvReducerMap.get(maxcombination))));
+
+
+//****************************************************************************************************************/					 
+
+
+						if (!energyLogs.isEmpty()) {
+							String fileName = Constants.File.getFileName(Constants.File.FILE_NAME_ENERGY);
+							File file = Constants.File.getFile(Constants.File.FILE_NAME_ENERGY);
+							CsvContract.writeToCSV(file,fileName,energyLogs, CsvContract.CsvHeaderType.ENERGY);
+							/*StringJoiner csvData = new StringJoiner(",\n");
+							if(!append)
+								csvData.add(EnergyLogCSV.getHeaderCSV());
+							Path path = Paths.get(fileName.replace("\\", "/"));
+							energyLogs.stream().map(el -> el.toCsvString()).forEach(csvData::add);
+							try {
+								Files.write(path, (csvData.toString()+System.lineSeparator()).getBytes(StandardCharsets.UTF_8), file.exists()?StandardOpenOption.APPEND : StandardOpenOption.CREATE_NEW);
+							} catch (IOException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}  //Append mode*/
+
+						}
+						workingset.remove(maxcombination);
+						System.out.println(workingset);
+
 					}
-					workingset.remove(workingset.indexOf(maxcombination));
-					System.out.println(workingset);
 
+					System.out.println("Index Mapper data = " + Arrays.asList(mappers));
+					System.out.println("Index Value wiht maxcoflow " + mapper_max.indexOf(coflow_max));
+
+					
+//*****************************************************************************************************************/
+					
+					
+					/*
+					 * mappers[mapper_max.indexOf(coflow_max)].mapper_queue.forEach(
+					 * (q)->{ System.out.println("Looped Queue = "+q);
+					 * System.out.println("Coflow Max = "+coflow_max);
+					 * if(q.contains(coflow_max)){
+					 * System.out.println("removed coflow = "+coflow_max);
+					 * q.remove(coflow_max);
+					 * System.out.println("I have deleted coflow "+coflow_max);} });
+					 */
+
+					
+					
+					mappers[mapper_max.indexOf(coflow_max)].mapper_queue.stream().filter(q -> q.contains(coflow_max))
+					.findAny().ifPresent(q -> {
+						q.remove(coflow_max);
+					});
+					
+					
+					/**
+					 * List removal types 1-> index 2 -> element
+					 */
+					
+					
+					/*
+					 * if(mapper_max.contains(coflow_max)){
+					 * mapper_max.remove(coflow_max); }
+					 */
+
+					int in = mapper_max.indexOf(coflow_max);
+					mapper_max.set(in, 0);
+					
+					
+					// mapper_max.remove(in);
+					// mapper_max.add(in,0);
+					
+					
 				}
-
-				System.out.println("Index Mapper data = " + Arrays.asList(mappers));
-				System.out.println("Index Value wiht maxcoflow " + mapper_max.indexOf(coflow_max));
-
-				/*
-				 * mappers[mapper_max.indexOf(coflow_max)].mapper_queue.forEach(
-				 * (q)->{ System.out.println("Looped Queue = "+q);
-				 * System.out.println("Coflow Max = "+coflow_max);
-				 * if(q.contains(coflow_max)){
-				 * System.out.println("removed coflow = "+coflow_max);
-				 * q.remove(coflow_max);
-				 * System.out.println("I have deleted coflow "+coflow_max);} });
-				 */
-				mappers[mapper_max.indexOf(coflow_max)].mapper_queue.stream().filter(q -> q.contains(coflow_max))
-						.findAny().ifPresent(q -> {
-							q.remove(coflow_max);
-						});
-				/**
-				 * List removal types 1-> index 2 -> element
-				 */
-				/*
-				 * if(mapper_max.contains(coflow_max)){
-				 * mapper_max.remove(coflow_max); }
-				 */
-
-				int in = mapper_max.indexOf(coflow_max);
-				mapper_max.set(in, 0);
-				// mapper_max.remove(in);
-				// mapper_max.add(in,0);
-			}
-			//Find all queues of mapper are empty and then remove mapper from mappers
-			for(n=0;n<Framework.Mapper;n++){
-				for(r=0;r<Framework.queuesinmapper;r++){
-					if(mappers[n].mapper_queue.get(r).isEmpty()){
-						mappers[n].mapper_queue.get(r).remove();
+				//Find all queues of mapper are empty and then remove mapper from mappers
+				for(n=0;n<mappers.length;n++){
+					if(mappers[n]!=null){
+					for(r=0;r<mappers[n].mapper_queue.size();r++){
+						if(mappers[n].mapper_queue.get(r).isEmpty()){
+							mappers[n].mapper_queue.remove(r);
+						}
+						else{
+							
+							
+						}
+					}
+					if(mappers[n].mapper_queue.isEmpty()){
+						mappers[n]=null;  
 					}
 				}
-				if(mappers[n].mapper_queue.isEmpty()){
-			      mappers[n]=null;  
+					
 				}
-			}
 			}
 		});
-		}
-	
+		
+		
+	}
+
+
+//***********************************************************************************************************/
+
+
 
 	public void calculateArrays() {
 
-		queue_max = new ArrayList<Integer>();
-		mapper_max = new ArrayList<Integer>();
-
-		for (int map = 0; map < Framework.Mapper; map++) { // loop for mapper
-
-			for (int queue = 0; queue < Framework.queuesinmapper; queue++) { // loop
-																				// for
-																				// queue
-
+		queue_max = new ArrayList<>();
+		mapper_max = new ArrayList<>();
+        
+		for (int map = 0; map < mappers.length; map++) { // loop for mapper
+            if(mappers[map]!=null){
+			for (int queue = 0; queue < mappers[map].mapper_queue.size(); queue++) { // loop
+				// for
+				// queue
+             
 				PriorityQueue<Integer> completequeue = mappers[map].mapper_queue.get(queue);
+				
 				queue_max.add(Collections.max(completequeue));
 
 			}
+			
 			mapper_max.add(Collections.max(queue_max));
-			queue_max.remove(queue_max.indexOf(Collections.max(queue_max)));
+			
+			queue_max.remove(Collections.max(queue_max));
+			
 		}
 		System.out.println("Thses are mappers highest coflows " + mapper_max);
+		}
 	}
+	
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

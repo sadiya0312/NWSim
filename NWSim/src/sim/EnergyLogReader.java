@@ -13,11 +13,10 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.StringJoiner;
-import java.util.stream.Collectors;
 
-import sim.dto.TimeLogCSV;
+import sim.csvs.CsvContract;
+import sim.csvs.TimeLogCSV;
 import sim.dto.TimeLogType;
 import sim.dto.TimelogDTO;
 import sim.utils.Constants;
@@ -39,13 +38,11 @@ public class EnergyLogReader {
 
 	}
 
-	/**
-	 * @param args
-	 */
+
 	public void exportLog() {
 		readLogFile("Timelog.log");
 	  exportToCSV(processList(),
-			 Constants.File.FILE_PATH+Constants.File.FILE_NAME_ENERGY+Constants.File.CSV);
+			 Constants.File.getFileName(Constants.File.FILE_NAME_ENERGY));
 	 
 	}
 		
@@ -69,9 +66,9 @@ public class EnergyLogReader {
 	}
 	
 	private void exportToCSV(List<TimeLogCSV> csvs, String filePath){
-		 StringJoiner stringJoiner = new StringJoiner(",\n");
 		 File file = new File(filePath);
-		  if(!file.exists()){
+		CsvContract.writeToCSV(file, filePath, csvs, CsvContract.CsvHeaderType.TIME);
+		 /* if(!file.exists()){
 			  stringJoiner.add(TimeLogCSV.getHeaderCSV());
 		  }
 		  
@@ -82,7 +79,7 @@ public class EnergyLogReader {
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}  //Append mode
+		}  //Append mode*/
 		  System.out.println("================================== Export Complete ======================================");
 	}
 	

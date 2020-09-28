@@ -6,9 +6,7 @@ import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import sim.algorithms.Algorithm;
 import sim.algorithms.AlgorithmFactory;
 import sim.algorithms.AlgorithmFactory.AlgoType;
-import sim.algorithms.FIFO;
-import sim.algorithms.PFS;
-import sim.algorithms.SJF;
+import sim.csvs.CsvHelper;
 
 import java.io.*;
 import java.security.Timestamp;
@@ -41,20 +39,21 @@ public class Framework {
 	public static int queuesinmapper;
 	public static int number_jobs;
 	public static int count=0;
+	public static List<Float> intlist;
 
+	public static List<Float> gigaflops;
 
-
-	/**
-	 * @param args
-	 * @throws IOException 
-	 * @throws InterruptedException 
-	 * @throws InvalidFormatException 
-	 */
+	public static List<Float> watts;
 
 	public void CallFunctions(){
 
 	}
-
+	/**
+	 * @param args
+	 * @throws IOException
+	 * @throws InterruptedException
+	 * @throws InvalidFormatException
+	 */
 	public static void main(String[] args) throws IOException, InterruptedException, InvalidFormatException {
 
 
@@ -75,8 +74,9 @@ public class Framework {
 		id = Integer.parseInt(prop.getProperty("Events"));
 		queuesinmapper=Integer.parseInt(prop.getProperty("Queueinmapper"));
 		number_jobs= Integer.parseInt(prop.getProperty("numberjobs"));
-
-
+		
+		
+		
 		Server sr=new Server();
 		Client cl=new Client();
 
@@ -108,7 +108,8 @@ public class Framework {
 
 		Collectdata cd=new Collectdata();
 		cd.main(args);
-
+		
+		CsvHelper.initData(CsvHelper.CSVFile.CPU_SPECS);
 
 		//Calling on function in Graph class
 		Graph g=new Graph();
@@ -119,8 +120,9 @@ public class Framework {
 		en.Create_jobs(en, g);
 		en.send_mapper(en,g);
 		
+		
 		AlgorithmFactory algorithmFactory = AlgorithmFactory.getInstance(en, g);
-		Algorithm algorithm = algorithmFactory.getAlgorithm(AlgoType.EEA);
+		Algorithm algorithm = algorithmFactory.getAlgorithm(AlgoType.FIFO);
 		algorithm.runAlgo();
 		
 		TimeLogReader csv=new TimeLogReader();
